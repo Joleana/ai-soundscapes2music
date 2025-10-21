@@ -343,7 +343,7 @@ export default function SoundScene() {
   const [genErr, setGenErr] = React.useState('');
 
   const audioRef = React.useRef(null);
-  const [autoPlayNext, setAutoPlayNext] = React.useState(false);
+  const [autoPlayNext, setAutoPlayNext] = React.useState(true);
 
   // responsive piano width + unlock audio on first tap
   useEffect(() => {
@@ -430,6 +430,14 @@ export default function SoundScene() {
       requestAnimationFrame(() => {
         audioRef.current?.play().catch(() => {});
       });
+      // 🔊 Nudge playback right away (same click = user gesture)
+      const el = audioRef.current;
+      if (el && autoPlayNext) {
+        el.src = url;   // set explicitly to be safe
+        el.preload = 'auto';
+        el.load();
+        el.play().catch(() => {/* fallback below will cover it */});
+      }
     } catch (e) {
       setGenErr(e?.message || 'Failed to generate');
     } finally {
@@ -554,7 +562,9 @@ export default function SoundScene() {
             {genErr ? <div style={{ color: '#fca5a5', marginTop: 8, fontSize: 12 }}>{genErr}</div> : null}
             {genUrl ? (
               <div style={{ marginTop: 10 }}>
-                <audio ref={audioRef} controls src={genUrl} preload="auto" style={{ width: '100%' }} />
+                <audio ref={audioRef} controls src={genUrl || ''} preload="auto" style={{ width: '100%' }} crossOrigin="anonymous"/>
+                {/* Manual fallback button if autoplay was blocked */}
+                <button onClick={() => audioRef.current?.play()} style={{ marginTop: 6, padding: '6px 10px', borderRadius: 8 }}> ▶︎ Play result </button>
               </div>
             ) : null}
           </div>
