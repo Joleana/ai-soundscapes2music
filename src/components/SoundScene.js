@@ -342,6 +342,9 @@ export default function SoundScene() {
   const [isGen, setIsGen] = React.useState(false);
   const [genErr, setGenErr] = React.useState('');
 
+  const audioRef = React.useRef(null);
+  const [autoPlayNext, setAutoPlayNext] = React.useState(false);
+
   // responsive piano width + unlock audio on first tap
   useEffect(() => {
     const onResize = () =>
@@ -422,13 +425,30 @@ export default function SoundScene() {
         noteText: lastNoteText || '',
         sampleUrl: absoluteSampleUrl || ''
       });
+      setAutoPlayNext(true);
       setGenUrl(url);
+      requestAnimationFrame(() => {
+        audioRef.current?.play().catch(() => {});
+      });
     } catch (e) {
       setGenErr(e?.message || 'Failed to generate');
     } finally {
       setIsGen(false);
     }
   };
+
+  React.useEffect(() => {
+    if (!genUrl || !autoPlayNext || !audioRef.current) return;
+    const el = audioRef.current;
+    const onCanPlay = () => {
+      el.play().catch(() => {});
+    };
+    el.addEventListener('canplay', onCanPlay);
+    // load ensures the new src is committed before play()
+    el.load();
+    return () => el.removeEventListener('canplay', onCanPlay);
+  }, [genUrl, autoPlayNext]);
+
 
   const controlsRef = useRef(null);
   const objects = useScatteredObjects(baseObjects);
@@ -534,7 +554,7 @@ export default function SoundScene() {
             {genErr ? <div style={{ color: '#fca5a5', marginTop: 8, fontSize: 12 }}>{genErr}</div> : null}
             {genUrl ? (
               <div style={{ marginTop: 10 }}>
-                <audio controls src={genUrl} style={{ width: '100%' }} />
+                <audio ref={audioRef} controls src={genUrl} preload="auto" style={{ width: '100%' }} />
               </div>
             ) : null}
           </div>
