@@ -28,11 +28,9 @@ export async function POST(req) {
     };
     const style = promptMap[mood] || promptMap.upbeat;
 
-    const prompt = [
-      style,
-      noteText ? `center around the note ${noteText}` : '',
-      'no vocals, clean mix',
-    ].filter(Boolean).join(', ');
+    const prompt = [style, noteText ? `center around the note ${noteText}` : '', 'no vocals, clean mix']
+      .filter(Boolean)
+      .join(', ');
 
     const input = {
       prompt,
@@ -43,45 +41,94 @@ export async function POST(req) {
       top_k: 250,
       top_p: 0,
     };
-    if (sampleUrl) input.input_audio = sampleUrl; // must be a public URL
+    if (sampleUrl) input.input_audio = sampleUrl; // public HTTPS URL
 
-    const output = await replicate.run(MUSICGEN_VERSION, { input });
+    // 1) Try the simple path
+    let output;
+    try {
+      output = await replicate.run(MUSICGEN_VERSION, { input });
+    } catch (e) {
+      console.error('[generate-song] run() threw:', e?.message || e);
+    }
 
-    // --- normalize into a single string URL (minimal + robust) ---
-    let urlCandidate = null;
+    // 2) If run() gave nothing ({} / null), fall back to Predictions API once
+    if (
+      !output ||
+      (typeof output === 'object' && !Array.isArray(output) && Object.keys(output).length === 0)
+    ) {
+      try {
+        const prediction = await replicate.predictions.create({
+          version: MUSICGEN_VERSION,
+          input,
+        });
 
-    if (typeof output === 'string') {
-      urlCandidate = output;
-    } else if (Array.isArray(output)) {
-      const first = output[0];
-      urlCandidate = typeof first === 'string'
-        ? first
-        : (first?.audio || first?.url || null);
-    } else if (output && typeof output === 'object') {
-      // Common fields seen across versions
-      const audioField = output.audio ?? output.url ?? output.output ?? output.result;
-      if (Array.isArray(audioField)) {
-        const first = audioField[0];
-        urlCandidate = typeof first === 'string'
-          ? first
-          : (first?.audio || first?.url || null);
-      } else {
-        urlCandidate = audioField || null;
+        // poll briefly until it resolves
+        let p = prediction;
+        const started = Date.now();
+        const deadlineMs = 60_000; // 60s cap
+        while (p.status === 'starting' || p.status === 'processing') {
+          if (Date.now() - started > deadlineMs) break;
+          await new Promise(r => setTimeout(r, 1500));
+          p = await replicate.predictions.get(p.id);
+        }
+
+        if (p.status !== 'succeeded') {
+          console.error('[generate-song] prediction failed:', p.status, p.error || '');
+          return NextResponse.json({ error: p.error || `Prediction ${p.status}` }, { status: 500 });
+        }
+        output = p.output;
+      } catch (e) {
+        console.error('[generate-song] predictions.create/get threw:', e?.message || e);
+        return NextResponse.json({ error: 'Replicate prediction failed' }, { status: 500 });
       }
     }
 
-    const url = (Array.isArray(urlCandidate) ? urlCandidate[0] : urlCandidate) || null;
+    // --- robust URL extractor (unchanged in spirit, just compact) ---
+    function findFirstUrl(v, depth = 0) {
+      if (depth > 5 || v == null) return null;
+      if (typeof v === 'string') return /^https?:\/\//i.test(v) ? v : null;
+      if (Array.isArray(v)) {
+        for (const item of v) {
+          const u = findFirstUrl(item, depth + 1);
+          if (u) return u;
+        }
+        return null;
+      }
+      if (typeof v === 'object') {
+        const preferred = ['audio', 'url', 'output', 'result', 'files'];
+        for (const key of preferred) {
+          if (key in v) {
+            const u = findFirstUrl(v[key], depth + 1);
+            if (u) return u;
+          }
+        }
+        for (const k of Object.keys(v)) {
+          const u = findFirstUrl(v[k], depth + 1);
+          if (u) return u;
+        }
+      }
+      return null;
+    }
 
-    if (typeof url !== 'string' || !/^https?:\/\//i.test(url)) {
-      // one concise log so we can see the real shape server-side
-      try { console.error('[generate-song] Unrecognized output:', JSON.stringify(output).slice(0, 600)); } catch {}
+    const url = findFirstUrl(output);
+
+    if (!url) {
+      try {
+        console.error(
+          '[generate-song] No URL found. sampleUrl=',
+          sampleUrl,
+          ' outputPreview=',
+          JSON.stringify(output)?.slice(0, 600)
+        );
+      } catch {}
       return NextResponse.json({ error: 'No audio URL from model' }, { status: 500 });
     }
 
     return NextResponse.json({ url });
   } catch (err) {
-    console.error(err);
+    console.error('[generate-song] Error:', err);
     return NextResponse.json({ error: err?.message || 'Failed to generate' }, { status: 500 });
   }
 }
+
 
