@@ -39,18 +39,38 @@ export async function POST(req) {
       top_p: 0,
     };
     if (sampleUrl) input.input_audio = sampleUrl; // must be a public URL Replicate can fetch
-
+    
     const output = await replicate.run(MUSICGEN_VERSION, { input });
 
-    // Some models return a string URL; some return arrays/objects—normalize it:
-    const url =
-      typeof output === 'string'
-        ? output
-        : Array.isArray(output)
-          ? (output[0]?.audio || output[0] || null)
-          : (output?.audio || output?.url || null);
+    // normalize into a single string URL, no matter the shape
+    let urlCandidate = null;
 
-    if (!url) return NextResponse.json({ error: 'No audio URL from model' }, { status: 500 });
+    if (typeof output === 'string') {
+      urlCandidate = output;
+    } else if (Array.isArray(output)) {
+      // could be ["https://..."] or [{ audio: "https://..." }] or ["https://...", ...]
+      const first = output[0];
+      urlCandidate = typeof first === 'string'
+        ? first
+        : (first?.audio || first?.url || null);
+    } else if (output && typeof output === 'object') {
+      // could be { audio: ["https://..."] } or { audio: "https://..." } or { url: "https://..." } or { output: [...] }
+      const audioField = output.audio ?? output.url ?? output.output ?? output.result;
+      if (Array.isArray(audioField)) {
+        urlCandidate = typeof audioField[0] === 'string'
+          ? audioField[0]
+          : (audioField[0]?.audio || audioField[0]?.url || null);
+      } else {
+        urlCandidate = audioField || null;
+      }
+    }
+
+    const url = (Array.isArray(urlCandidate) ? urlCandidate[0] : urlCandidate) || null;
+
+    if (typeof url !== 'string' || !url.startsWith('http')) {
+      console.error('Replicate output shape not recognized:', JSON.stringify(output)?.slice(0, 500));
+      return NextResponse.json({ error: 'No audio URL from model' }, { status: 500 });
+    }
 
     return NextResponse.json({ url });
   } catch (err) {
