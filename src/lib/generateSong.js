@@ -5,8 +5,8 @@ export async function generateSong({ mood, noteText, sampleUrl }) {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       mood,
-      noteText: noteText ?? '',
-      sampleUrl: sampleUrl ?? '',
+      noteText: noteText || '',
+      sampleUrl: sampleUrl || '',
       duration: 10
     })
   });
