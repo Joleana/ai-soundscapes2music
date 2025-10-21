@@ -1,4 +1,5 @@
 export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic'; // doesn’t get cache
 import { NextResponse } from 'next/server';
 import Replicate from 'replicate';
 

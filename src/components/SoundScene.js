@@ -413,10 +413,14 @@ export default function SoundScene() {
     setIsGen(true);
     setGenUrl('');
     try {
+      const origin = window.location.origin;
+      const absoluteSampleUrl = lastSampleUrl
+        ? `${origin}${lastSampleUrl.startsWith('/') ? '' : '/'}${lastSampleUrl}`
+        : '';      
       const url = await generateSong({
         mood,
         noteText: lastNoteText || '',
-        sampleUrl: lastSampleUrl || ''
+        sampleUrl: absoluteSampleUrl || ''
       });
       setGenUrl(url);
     } catch (e) {
