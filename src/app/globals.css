@@ -40,3 +40,12 @@ a {
     color-scheme: dark;
   }
 }
+
+/* Full-viewport canvas plumbing */
+:root, html, body {
+  height: 100%;
+}
+body {
+  margin: 0;
+  overflow: hidden; /* prevent page scroll from shrinking canvas */
+}
