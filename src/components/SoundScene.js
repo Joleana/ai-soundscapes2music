@@ -13,7 +13,7 @@ import { objects as baseObjects } from '../lib/registry';
 import { Piano, MidiNumbers } from 'react-piano';
 import 'react-piano/dist/styles.css';
 
-import { generateSong } from '@/lib/generateSong';
+import { generateSong } from '../lib/generateSong';
 
 // ====== tunables ======
 const GROUND_Y = 0.0;
