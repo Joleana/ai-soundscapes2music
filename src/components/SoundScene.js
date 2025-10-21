@@ -414,37 +414,43 @@ export default function SoundScene() {
   const onGenerate = async () => {
     setGenErr('');
     setIsGen(true);
-    setGenUrl('');
+
+    // capture the user gesture *before* the async call (helps autoplay policies)
+    setAutoPlayNext(true);
+
+    // clear any previous clip
+    setGenUrl(null);
+
     try {
       const origin = window.location.origin;
       const absoluteSampleUrl = lastSampleUrl
         ? `${origin}${lastSampleUrl.startsWith('/') ? '' : '/'}${lastSampleUrl}`
-        : '';      
+        : '';
+
       const url = await generateSong({
         mood,
         noteText: lastNoteText || '',
         sampleUrl: absoluteSampleUrl || ''
       });
-      setAutoPlayNext(true);
-      const busted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
-      setGenUrl(busted);
-      requestAnimationFrame(() => {
-        audioRef.current?.play().catch(() => {});
-      });
-      // 🔊 Nudge playback right away (same click = user gesture)
-      const el = audioRef.current;
-      if (el && autoPlayNext) {
-        el.src = url;   // set explicitly to be safe
-        el.preload = 'auto';
-        el.load();
-        el.play().catch(() => {/* fallback below will cover it */});
+
+      if (!url || typeof url !== 'string') {
+        throw new Error('Model did not return an audio URL');
       }
+
+      // cache-bust so the <audio> definitely reloads on repeated generations
+      const busted = `${url}${url.includes('?') ? '&' : '?'}t=${Date.now()}`;
+      setGenUrl(busted);
+
+      // no manual el.play() here — your canplay effect + autoPlayNext handles it
     } catch (e) {
+      console.error('Generate failed:', e);
+      setAutoPlayNext(false);         // avoid trying to play nothing
       setGenErr(e?.message || 'Failed to generate');
     } finally {
       setIsGen(false);
     }
   };
+
 
   React.useEffect(() => {
     if (!genUrl || !autoPlayNext || !audioRef.current) return;

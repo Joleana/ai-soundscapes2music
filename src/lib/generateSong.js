@@ -10,10 +10,13 @@ export async function generateSong({ mood, noteText, sampleUrl }) {
       duration: 10
     })
   });
+  const data = await res.json();
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.error || 'Failed to generate');
+    throw new Error(data.error || 'Failed to generate');
   }
-  const { url } = await res.json();
+  const { url } = data || {};
+  if (!url) {
+    throw new Error('Model did not return an audio URL');
+  }
   return url;
 }
