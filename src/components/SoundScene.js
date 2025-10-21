@@ -522,146 +522,146 @@ export default function SoundScene() {
             />
           ))}
         </Canvas>
-      </Suspense>
-      {/* === AI Jam panel (bottom-left) === */}
-      <div
-        style={{
-          position: 'absolute', left: 12, bottom: 12, zIndex: 10,
-          display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360
-        }}
-        className="pointer-events-auto"
-      >
-        <div style={{
-          background: 'rgba(12,14,20,0.7)', color: '#fff',
-          borderRadius: 12, padding: 12, backdropFilter: 'blur(6px)'
-        }}>
-          <div style={{ fontWeight: 700, marginBottom: 8 }}>AI Jam</div>
+        {/* === AI Jam panel (bottom-left) === */}
+        <div
+          style={{
+            position: 'absolute', left: 12, bottom: 12, zIndex: 10,
+            display: 'flex', flexDirection: 'column', gap: 8, maxWidth: 360
+          }}
+          className="pointer-events-auto"
+        >
+          <div style={{
+            background: 'rgba(12,14,20,0.7)', color: '#fff',
+            borderRadius: 12, padding: 12, backdropFilter: 'blur(6px)'
+          }}>
+            <div style={{ fontWeight: 700, marginBottom: 8 }}>AI Jam</div>
 
-          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
-            {['slow','fast','moody','upbeat'].map(m => (
-              <button
-                key={m}
-                onClick={() => setMood(m)}
-                style={{
-                  padding: '6px 10px', borderRadius: 8, border: '1px solid #2c3340',
-                  background: mood === m ? '#2563eb' : '#111827', color: '#fff', cursor: 'pointer'
-                }}
-              >
-                {m}
-              </button>
-            ))}
-          </div>
-
-          <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8 }}>
-            {lastSampleUrl
-              ? <>Source: <code style={{ opacity: 0.9 }}>{lastSampleUrl}</code>
-                  {lastNoteText ? <> • Note: <strong>{lastNoteText}</strong></> : null}
-                </>
-              : <>Click a 3D object to pick a source sound</>}
-          </div>
-
-          <button
-            onClick={onGenerate}
-            disabled={isGen || !lastSampleUrl}
-            style={{
-              width: '100%', padding: '8px 12px', borderRadius: 8,
-              border: '1px solid #2c3340', background: '#10b981',
-              color: '#0b1220', fontWeight: 700, cursor: 'pointer',
-              opacity: isGen || !lastSampleUrl ? 0.6 : 1
-            }}
-          >
-            {isGen ? 'Generating…' : 'Generate 10s clip'}
-          </button>
-
-          {genErr ? <div style={{ color: '#fca5a5', marginTop: 8, fontSize: 12 }}>{genErr}</div> : null}
-          {genUrl ? (
-            <div style={{ marginTop: 10 }}>
-              <audio ref={audioRef} controls src={genUrl || ''} preload="auto" style={{ width: '100%' }}/>
-              {/* Manual fallback button if autoplay was blocked */}
-              <button onClick={() => audioRef.current?.play()} style={{ marginTop: 6, padding: '6px 10px', borderRadius: 8 }}> ▶︎ Play result </button>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginBottom: 8 }}>
+              {['slow','fast','moody','upbeat'].map(m => (
+                <button
+                  key={m}
+                  onClick={() => setMood(m)}
+                  style={{
+                    padding: '6px 10px', borderRadius: 8, border: '1px solid #2c3340',
+                    background: mood === m ? '#2563eb' : '#111827', color: '#fff', cursor: 'pointer'
+                  }}
+                >
+                  {m}
+                </button>
+              ))}
             </div>
-          ) : null}
-        </div>
-      </div>
 
-      {/* --- Bottom overlay: analysis card + piano --- */}
-      <div
-        className="pointer-events-none"
-        style={{
-          position: 'absolute',
-          left: 0, right: 0, bottom: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          gap: 12,
-          padding: '12px',
-        }}
-      >
-        {/* Analysis card */}
-        {popupData && (
-          <div
-            className="pointer-events-auto"
-            style={{
-              width: '100%',
-              maxWidth: 720,
-              background: '#ede9fe',
-              color: '#3b0764',
-              borderRadius: 12,
-              boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
-              padding: '10px 12px'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-              <h2 style={{ fontWeight: 700, fontSize: 16 }}>🎵 Sound Analysis</h2>
-              <button
-                className="pointer-events-auto"
-                onClick={() => setPopupData(null)}
-                style={{ fontSize: 12, background: '#7c3aed', color: 'white', borderRadius: 8, padding: '4px 8px' }}
-              >
-                Close
-              </button>
+            <div style={{ fontSize: 12, opacity: 0.9, marginBottom: 8 }}>
+              {lastSampleUrl
+                ? <>Source: <code style={{ opacity: 0.9 }}>{lastSampleUrl}</code>
+                    {lastNoteText ? <> • Note: <strong>{lastNoteText}</strong></> : null}
+                  </>
+                : <>Click a 3D object to pick a source sound</>}
             </div>
-            {popupData.frequency ? (
-              <div style={{ fontSize: 13, marginTop: 6 }}>
-                <div><b>Frequency:</b> {popupData.frequency.toFixed(2)} Hz</div>
-                <div><b>Note:</b> {popupData.note}</div>
-                <div><b>Method:</b> {popupData.method}</div>
-              </div>
-            ) : (
-              <div style={{ fontSize: 13, marginTop: 6 }}>Couldn’t detect a stable pitch.</div>
-            )}
-          </div>
-        )}
 
-        {/* Piano */}
-        {showPiano && (
-          <div
-            ref={pianoWrapRef}
-            className="pointer-events-auto"
-            style={{
-              width: '100%',
-              maxWidth: 720,
-              background: 'white',
-              border: '1px solid #e5e7eb',
-              borderRadius: 10,
-              overflow: 'hidden',
-              boxShadow: '0 6px 24px rgba(0,0,0,0.25)'
-            }}
-          >
-            <Piano
-              noteRange={{ first: firstMidi, last: lastMidi }}
-              width={pianoWidth}
-              activeNotes={activeNotes}
-              playNote={(midi) => { setActiveNotes([midi]); playBeepForMidi(midi); }}
-              stopNote={() => setActiveNotes([])}
-              renderNoteLabel={({ midiNumber }) => {
-                const { note, octave } = MidiNumbers.getAttributes(midiNumber);
-                return <div style={{ fontSize: 10, color: '#111' }}>{note}{octave}</div>;
+            <button
+              onClick={onGenerate}
+              disabled={isGen || !lastSampleUrl}
+              style={{
+                width: '100%', padding: '8px 12px', borderRadius: 8,
+                border: '1px solid #2c3340', background: '#10b981',
+                color: '#0b1220', fontWeight: 700, cursor: 'pointer',
+                opacity: isGen || !lastSampleUrl ? 0.6 : 1
               }}
-            />
+            >
+              {isGen ? 'Generating…' : 'Generate 10s clip'}
+            </button>
+
+            {genErr ? <div style={{ color: '#fca5a5', marginTop: 8, fontSize: 12 }}>{genErr}</div> : null}
+            {genUrl ? (
+              <div style={{ marginTop: 10 }}>
+                <audio ref={audioRef} controls src={genUrl || ''} preload="auto" style={{ width: '100%' }}/>
+                {/* Manual fallback button if autoplay was blocked */}
+                <button onClick={() => audioRef.current?.play()} style={{ marginTop: 6, padding: '6px 10px', borderRadius: 8 }}> ▶︎ Play result </button>
+              </div>
+            ) : null}
           </div>
-        )}
-      </div>
+        </div>
+
+        {/* --- Bottom overlay: analysis card + piano --- */}
+        <div
+          className="pointer-events-none"
+          style={{
+            position: 'absolute',
+            left: 0, right: 0, bottom: 0,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: 12,
+            padding: '12px',
+          }}
+        >
+          {/* Analysis card */}
+          {popupData && (
+            <div
+              className="pointer-events-auto"
+              style={{
+                width: '100%',
+                maxWidth: 720,
+                background: '#ede9fe',
+                color: '#3b0764',
+                borderRadius: 12,
+                boxShadow: '0 6px 24px rgba(0,0,0,0.25)',
+                padding: '10px 12px'
+              }}
+            >
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                <h2 style={{ fontWeight: 700, fontSize: 16 }}>🎵 Sound Analysis</h2>
+                <button
+                  className="pointer-events-auto"
+                  onClick={() => setPopupData(null)}
+                  style={{ fontSize: 12, background: '#7c3aed', color: 'white', borderRadius: 8, padding: '4px 8px' }}
+                >
+                  Close
+                </button>
+              </div>
+              {popupData.frequency ? (
+                <div style={{ fontSize: 13, marginTop: 6 }}>
+                  <div><b>Frequency:</b> {popupData.frequency.toFixed(2)} Hz</div>
+                  <div><b>Note:</b> {popupData.note}</div>
+                  <div><b>Method:</b> {popupData.method}</div>
+                </div>
+              ) : (
+                <div style={{ fontSize: 13, marginTop: 6 }}>Couldn’t detect a stable pitch.</div>
+              )}
+            </div>
+          )}
+
+          {/* Piano */}
+          {showPiano && (
+            <div
+              ref={pianoWrapRef}
+              className="pointer-events-auto"
+              style={{
+                width: '100%',
+                maxWidth: 720,
+                background: 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: 10,
+                overflow: 'hidden',
+                boxShadow: '0 6px 24px rgba(0,0,0,0.25)'
+              }}
+            >
+              <Piano
+                noteRange={{ first: firstMidi, last: lastMidi }}
+                width={pianoWidth}
+                activeNotes={activeNotes}
+                playNote={(midi) => { setActiveNotes([midi]); playBeepForMidi(midi); }}
+                stopNote={() => setActiveNotes([])}
+                renderNoteLabel={({ midiNumber }) => {
+                  const { note, octave } = MidiNumbers.getAttributes(midiNumber);
+                  return <div style={{ fontSize: 10, color: '#111' }}>{note}{octave}</div>;
+                }}
+              />
+            </div>
+          )}
+        </div>
+      </Suspense>
     </div>
   );
 }
