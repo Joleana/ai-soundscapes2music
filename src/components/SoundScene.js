@@ -426,7 +426,8 @@ export default function SoundScene() {
         sampleUrl: absoluteSampleUrl || ''
       });
       setAutoPlayNext(true);
-      setGenUrl(url);
+      const busted = url + (url.includes('?') ? '&' : '?') + 't=' + Date.now();
+      setGenUrl(busted);
       requestAnimationFrame(() => {
         audioRef.current?.play().catch(() => {});
       });
@@ -451,10 +452,17 @@ export default function SoundScene() {
     const onCanPlay = () => {
       el.play().catch(() => {});
     };
+    const onError = () => {
+      console.error('Audio element error:', el.error, 'src=', el.currentSrc || genUrl);
+    };
     el.addEventListener('canplay', onCanPlay);
+    el.addEventListener('error', onError);
     // load ensures the new src is committed before play()
     el.load();
-    return () => el.removeEventListener('canplay', onCanPlay);
+    return () => {
+      el.removeEventListener('canplay', onCanPlay);
+      el.removeEventListener('error', onError);
+    };
   }, [genUrl, autoPlayNext]);
 
 
@@ -562,7 +570,7 @@ export default function SoundScene() {
             {genErr ? <div style={{ color: '#fca5a5', marginTop: 8, fontSize: 12 }}>{genErr}</div> : null}
             {genUrl ? (
               <div style={{ marginTop: 10 }}>
-                <audio ref={audioRef} controls src={genUrl || ''} preload="auto" style={{ width: '100%' }} crossOrigin="anonymous"/>
+                <audio ref={audioRef} controls src={genUrl || ''} preload="auto" style={{ width: '100%' }}/>
                 {/* Manual fallback button if autoplay was blocked */}
                 <button onClick={() => audioRef.current?.play()} style={{ marginTop: 6, padding: '6px 10px', borderRadius: 8 }}> ▶︎ Play result </button>
               </div>
