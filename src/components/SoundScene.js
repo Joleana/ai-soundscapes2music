@@ -381,21 +381,6 @@ export default function SoundScene() {
 
   const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
-  // const playBeepForMidi = (midi) => {
-  //   const ctx = ensure();
-  //   const osc = ctx.createOscillator();
-  //   const gain = ctx.createGain();
-  //   osc.type = 'sine';
-  //   osc.frequency.value = midiToFreq(midi);
-  //   gain.gain.value = 0.0001;
-  //   osc.connect(gain).connect(ctx.destination);
-  //   const now = ctx.currentTime;
-  //   osc.start(now);
-  //   gain.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
-  //   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-  //   osc.stop(now + 0.5);
-  // };
-
   const playBeepForMidi = (midi) => {
     if (!piano) return; // not ready yet
     // ensure AudioContext is running (autoplay policies)
