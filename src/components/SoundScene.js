@@ -15,9 +15,12 @@ import 'react-piano/dist/styles.css';
 
 import { generateSong } from '../lib/generateSong';
 
+import Soundfont from 'soundfont-player';
+
+
 // ====== tunables ======
 const GROUND_Y = 0.0;
-const EYE_HEIGHT = 1.5;  // 👈 camera eye height above ground plane
+const EYE_HEIGHT = 0.6;  // 👈 camera eye height above ground plane
 const SKY_Y = 30; // max altitude when flying
 
 
@@ -39,7 +42,7 @@ function InitCamera({ controlsRef }) {
     const c = controlsRef.current;
 
     // ✅ simple, clean setup — ground visible with slope & good horizon
-    camera.position.set(0, 5.0, 24);
+    camera.position.set(0, 3.5, 24);
     camera.updateProjectionMatrix();
 
     if (c) {
@@ -61,7 +64,7 @@ function InitCamera({ controlsRef }) {
 
 
 // Q/E: pure pitch in-place (rotate camera quaternion), no translation.
-function KeyLook({ controlsRef, pitchRate = 10.0, minPolar = 0.01, maxPolar = Math.PI - 0.2 }) {
+function KeyLook({ controlsRef, pitchRate = 50.0, minPolar = 0.01, maxPolar = Math.PI - 0.2 }) {
   const pressed = React.useRef({ KeyQ: false, KeyE: false });
   const { clock, camera } = useThree();
   useEffect(() => {
@@ -359,25 +362,48 @@ export default function SoundScene() {
     };
   }, [ensure]);
 
+  const [piano, setPiano] = React.useState(null);
+  const audioCtxRef = React.useRef(null);
+
+  useEffect(() => {
+    // create AudioContext once
+    audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)();
+
+    // load the instrument asynchronously
+    Soundfont.instrument(audioCtxRef.current, 'electric_piano_2')
+      .then(inst => setPiano(inst))
+      .catch(err => console.error('Failed to load piano soundfont:', err));
+  }, []);
+
   // compact, readable keyboard range
   const firstMidi = MidiNumbers.fromNote('c2');
-  const lastMidi  = MidiNumbers.fromNote('c6');
+  const lastMidi  = MidiNumbers.fromNote('c7');
 
   const midiToFreq = (m) => 440 * Math.pow(2, (m - 69) / 12);
 
+  // const playBeepForMidi = (midi) => {
+  //   const ctx = ensure();
+  //   const osc = ctx.createOscillator();
+  //   const gain = ctx.createGain();
+  //   osc.type = 'sine';
+  //   osc.frequency.value = midiToFreq(midi);
+  //   gain.gain.value = 0.0001;
+  //   osc.connect(gain).connect(ctx.destination);
+  //   const now = ctx.currentTime;
+  //   osc.start(now);
+  //   gain.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
+  //   gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
+  //   osc.stop(now + 0.5);
+  // };
+
   const playBeepForMidi = (midi) => {
-    const ctx = ensure();
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = midiToFreq(midi);
-    gain.gain.value = 0.0001;
-    osc.connect(gain).connect(ctx.destination);
-    const now = ctx.currentTime;
-    osc.start(now);
-    gain.gain.exponentialRampToValueAtTime(0.2, now + 0.02);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
-    osc.stop(now + 0.5);
+    if (!piano) return; // not ready yet
+    // ensure AudioContext is running (autoplay policies)
+    const ctx = audioCtxRef.current;
+    if (ctx && ctx.state === 'suspended') ctx.resume();
+
+    // play a short note (duration in seconds)
+    piano.play(midi, ctx.currentTime + 0.1, { duration: 2.0, gain: 0.25 });
   };
 
   // analyze + light piano feedback + set AI inputs
@@ -654,8 +680,8 @@ export default function SoundScene() {
                 playNote={(midi) => { setActiveNotes([midi]); playBeepForMidi(midi); }}
                 stopNote={() => setActiveNotes([])}
                 renderNoteLabel={({ midiNumber }) => {
-                  const { note, octave } = MidiNumbers.getAttributes(midiNumber);
-                  return <div style={{ fontSize: 10, color: '#111' }}>{note}{octave}</div>;
+                  const { note} = MidiNumbers.getAttributes(midiNumber);
+                  return <div style={{ fontSize: 10, color: '#111' }}>{note}</div>;
                 }}
               />
             </div>
