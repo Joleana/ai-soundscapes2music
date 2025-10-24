@@ -587,8 +587,6 @@ export default function SoundScene() {
             {genUrl ? (
               <div style={{ marginTop: 10 }}>
                 <audio ref={audioRef} controls src={genUrl || ''} preload="auto" style={{ width: '100%' }}/>
-                {/* Manual fallback button if autoplay was blocked */}
-                <button onClick={() => audioRef.current?.play()} style={{ marginTop: 6, padding: '6px 10px', borderRadius: 8 }}> ▶︎ Play result </button>
               </div>
             ) : null}
           </div>
