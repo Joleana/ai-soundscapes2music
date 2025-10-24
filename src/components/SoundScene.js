@@ -14,7 +14,7 @@ import { Piano, MidiNumbers } from 'react-piano';
 import 'react-piano/dist/styles.css';
 
 import { generateSong } from '../lib/generateSong';
-
+import IntroOverlay from './IntroOverlay';
 import Soundfont from 'soundfont-player';
 
 
@@ -27,13 +27,36 @@ const SKY_Y = 30; // max altitude when flying
 // ------- tiny scatter only if missing positions (kept minimal) -------
 function useScatteredObjects(src) {
   return useMemo(() => {
-    const missing = src.filter(o => !o.position);
-    let i = 0;
-    const positions = missing.map(() => [ (i++ - 2) * 8, 0, -10 - i * 4 ]);
-    let p = 0;
-    return src.map(o => o.position ? o : { ...o, position: positions[p++] || [0,0,-12] });
+    let seed = 42;
+    const rng = (min, max) => {
+      const x = Math.sin(seed++) * 10000;
+      return (x - Math.floor(x)) * (max - min) + min;
+    };
+
+    // if an object already has a position, keep it
+    const withPositions = src.map((o, i) => {
+      if (o.position) return o;
+
+      // random scatter within a “field”
+      const x = rng(-150, 150);     // spread left/right
+      const z = rng(-150, -5);     // spread front/back (negative Z = away from camera)
+      const y = 0;                // all on the ground
+
+      // small random rotation so models aren’t perfectly aligned
+      const rotY = rng(-Math.PI, Math.PI);
+
+      return {
+        ...o,
+        position: [x, y, z],
+        rotation: o.rotation || [0, rotY, 0],
+        scale: o.scale || [1, 1, 1],
+      };
+    });
+
+    return withPositions;
   }, [src]);
 }
+
 
 // ------- one-time camera init so ground sits at bottom -------
 function InitCamera({ controlsRef }) {
@@ -110,7 +133,7 @@ function KeyLook({ controlsRef, pitchRate = 50.0, minPolar = 0.01, maxPolar = Ma
 
 // Arrows: walk/strafe; +/- : fly up/down. Shift = sprint.
 // Ground height stays at the initial camera Y; never below it; capped at SKY_Y.
-function Walker({ controlsRef, speed = 300.0, damping = 0.9, sprintMultiplier = 2.0 }) {
+function Walker({ controlsRef, speed = 700.0, damping = 0.9, sprintMultiplier = 2.0 }) {
   const { camera, clock } = useThree();
   const keys = React.useRef({
     ArrowUp: false, ArrowDown: false, ArrowLeft: false, ArrowRight: false,
@@ -671,6 +694,7 @@ export default function SoundScene() {
           )}
         </div>
       </Suspense>
+      <IntroOverlay alwaysShow={true} />
     </div>
   );
 }
