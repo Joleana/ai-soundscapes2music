@@ -41,4 +41,11 @@ useGLTF.preload && useGLTF.preload('/models/footsteps.glb');
 useGLTF.preload && useGLTF.preload('/models/bird.glb');
 useGLTF.preload && useGLTF.preload('/models/heart.glb');
 useGLTF.preload && useGLTF.preload('/models/telephone.glb');
-
+useGLTF.preload && useGLTF.preload('/models/earthquake.glb');
+useGLTF.preload && useGLTF.preload('/models/motorcycle.glb');
+useGLTF.preload && useGLTF.preload('/models/hookah.glb');
+useGLTF.preload && useGLTF.preload('/models/waterdrop.glb');
+useGLTF.preload && useGLTF.preload('/models/wind-tree.glb');
+useGLTF.preload && useGLTF.preload('/models/cat.glb');
+useGLTF.preload && useGLTF.preload('/models/tram.glb');
+useGLTF.preload && useGLTF.preload('/models/snake.glb');
