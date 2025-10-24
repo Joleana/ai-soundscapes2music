@@ -38,3 +38,7 @@ export function SoundModel({
 useGLTF.preload && useGLTF.preload('/models/dog.glb');
 useGLTF.preload && useGLTF.preload('/models/crunch.glb');
 useGLTF.preload && useGLTF.preload('/models/footsteps.glb');
+useGLTF.preload && useGLTF.preload('/models/bird.glb');
+useGLTF.preload && useGLTF.preload('/models/heart.glb');
+useGLTF.preload && useGLTF.preload('/models/telephone.glb');
+
